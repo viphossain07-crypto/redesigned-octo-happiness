@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101827"><meta name="description" content="TR PRO BOT demo trading dashboard">
+<link rel="manifest" href="manifest.webmanifest">
+<title>TR PRO BOT</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#131f31;--line:#26364d;--muted:#9aabc1;--txt:#f2f6fc;--blue:#4e9cff;--green:#20c997;--red:#ff647c;--amber:#f6c453}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#0b1220,#101c30);color:var(--txt);font:15px system-ui,Arial,sans-serif}
+header{padding:20px 16px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+h1{font-size:20px;margin:0;letter-spacing:.7px}.sub{font-size:12px;color:var(--muted);margin-top:4px}
+main{max-width:760px;margin:auto;padding:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap}.field{flex:1;min-width:135px}label{display:block;color:var(--muted);font-size:12px;margin:0 0 7px}
+select,input,button{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0c1728;color:var(--txt);font:inherit}
+button{background:var(--blue);border:0;color:#061326;font-weight:700;cursor:pointer;margin-top:12px}
+.signal{text-align:center;padding:20px 10px}.signal strong{display:block;font-size:32px;margin:8px}.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;padding:5px 10px;border-radius:30px;background:#26364d;color:#dce8f8;font-size:12px}
+.metric{flex:1;min-width:95px;background:#0c1728;border:1px solid var(--line);padding:12px;border-radius:12px}.metric b{display:block;font-size:18px;margin-top:4px}
+.warn{border-left:3px solid var(--amber);padding:10px 12px;background:#2a2518;border-radius:8px;color:#f6dfaa;font-size:13px;line-height:1.5}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:16px}
+.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--amber)}
+</style></head>
+<body>
+<header><div><h1>TR PRO BOT</h1><div class="sub">AI BINARY SIGNAL • DEMO EDITION</div></div><span class="pill">v1.0 PWA</span></header>
+<main>
+<div class="warn">DEMO MODE: This version does not receive live market prices and does not connect to brokers. Signals below are generated from sample data for testing the interface only. Do not trade using demo signals.</div>
+<section class="card">
+ <div class="row">
+  <div class="field"><label for="market">MARKET</label><select id="market"><option>EUR/USD</option><option>GBP/USD</option><option>USD/JPY</option><option>XAU/USD (Gold)</option><option>BTC/USD</option></select></div>
+  <div class="field"><label for="tf">TIMEFRAME</label><select id="tf"><option value="1">1 Minute</option><option value="5">5 Minutes</option><option value="15">15 Minutes</option></select></div>
+ </div>
+ <button id="scan">GENERATE DEMO SIGNAL</button>
+</section>
+<section class="card signal">
+ <span class="pill" id="status">READY</span>
+ <strong id="signal">NO SIGNAL</strong>
+ <div class="muted" id="detail">Tap “Generate Demo Signal” to test the interface.</div>
+</section>
+<section class="card">
+ <div class="row">
+  <div class="metric"><span class="muted">RSI (14)</span><b id="rsi">—</b></div>
+  <div class="metric"><span class="muted">EMA (12)</span><b id="ema12">—</b></div>
+  <div class="metric"><span class="muted">EMA (26)</span><b id="ema26">—</b></div>
+ </div>
+ <p class="muted" style="margin-bottom:0">Indicators use generated sample prices, not a live feed.</p>
+</section>
+<section class="card">
+ <b>Signal history</b><div id="history" class="muted" style="margin-top:10px">No demo signals yet.</div>
+</section>
+<section class="card">
+ <b>Next step for live data</b>
+ <p class="muted">A real version needs a permitted market-data API, a backend service, and broker-specific integration. OTC prices are usually broker-specific and may not be available from free public feeds.</p>
+</section>
+<footer>TR PRO BOT • Educational demo only • No guaranteed results</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function ema(a,p){let k=2/(p+1),v=a[0];for(let i=1;i<a.length;i++)v=a[i]*k+v*(1-k);return v}
+function rsi(a,p=14){let g=0,l=0;for(let i=a.length-p;i<a.length;i++){let d=a[i]-a[i-1];if(d>0)g+=d;else l-=d}if(l===0)return 100;return 100-100/(1+(g/p)/(l/p))}
+function run(){
+ let seed=Date.now()%100000;let prices=[];let v=100;
+ for(let i=0;i<40;i++){seed=(seed*9301+49297)%233280;v+=(seed/233280-.49)*.8;prices.push(v)}
+ let e12=ema(prices,12),e26=ema(prices,26),rv=rsi(prices);
+ let side=(e12>e26&&rv>52)?'CALL':(e12<e26&&rv<48)?'PUT':'NO TRADE';
+ $('signal').textContent=side;$('signal').className=side==='CALL'?'green':side==='PUT'?'red':'yellow';
+ $('status').textContent='SAMPLE DATA';$('detail').textContent=$('market').value+' • '+$('tf').value+' minute • Demo only';
+ $('rsi').textContent=rv.toFixed(1);$('ema12').textContent=e12.toFixed(3);$('ema26').textContent=e26.toFixed(3);
+ let item=document.createElement('div');item.style.padding='8px 0';item.style.borderTop='1px solid #26364d';item.textContent=new Date().toLocaleTimeString()+' — '+$('market').value+' / '+$('tf').value+'m: '+side+' (sample)';
+ $('history').prepend(item);
+}
+$('scan').addEventListener('click',run);
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script></body></html>
